@@ -1,0 +1,75 @@
+<div class="container-fluid">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="javascript:void(0)">Gestión de Productos</a>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="javascript:void(0)" (click)="toggleDropdown()">
+            {{ loggedUser }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" [class.show]="dropdownOpen">
+            <li>
+              <a class="dropdown-item" href="javascript:void(0)" (click)="logout()">Cerrar Sesión</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h3>Gestión de Productos</h3>
+    <div class="mb-3">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Buscar productos"
+        [(ngModel)]="searchTerm"
+        (input)="filterProducts()"
+      />
+    </div>
+
+    <button class="btn btn-primary mb-3" (click)="openAddProductModal()">Agregar Producto</button>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Imagen</th>
+          <th>Nombre</th>
+          <th>Precio</th>
+          <th>Cantidad</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of paginatedProducts">
+          <td>{{ product.id }}</td>
+          <td>
+            <img *ngIf="product.image" [src]="'http://127.0.0.1:8000/storage/' + product.image" alt="{{ product.name }}" style="width: 50px;" />
+          </td>
+          <td>{{ product.name }}</td>
+          <td>{{ product.price | currency }}</td>
+          <td>{{ product.quantity }}</td>
+          <td>
+            <button class="btn btn-info btn-sm" (click)="viewProduct(product)">Ver</button>
+            <button class="btn btn-warning btn-sm" (click)="editProduct(product)">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="deleteProduct(product)">Eliminar</button>
+          </td>
+        </tr>
+        <tr *ngIf="paginatedProducts.length === 0">
+          <td colspan="6" class="text-center">No se encontraron productos</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Add -->
+  <div class="custom-modal" *ngIf="showAddModal">
+    <div class="custom-modal-content">
+      <h5>Agregar Producto</h5>
+      <input type="text" placeholder="Nombre" [(ngModel)]="newProduct.name" />
+      <!-- Resto del modal -->
+    </div>
+  </div>
+</div>

@@ -1,0 +1,174 @@
+<div class="container-fluid">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="javascript:void(0)">Gestión de Usuarios</a>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="javascript:void(0)" (click)="toggleDropdown()">
+            <img
+              *ngIf="loggedUserImage"
+              [src]="loggedUserImage"
+              alt="Usuario"
+              class="rounded-circle me-2"
+              style="width: 40px; height: 40px;"
+            />
+            {{ loggedUser }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" [class.show]="dropdownOpen">
+            <li>
+              <a class="dropdown-item" href="javascript:void(0)" (click)="goToProducts()">Productos</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="javascript:void(0)" (click)="logout()">Cerrar Sesión</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h3>Gestión de Usuarios</h3>
+
+    <div class="mb-3">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Buscar usuarios por nombre o email"
+        [(ngModel)]="searchTerm"
+        (input)="filterUsers()"
+      />
+    </div>
+
+    <div class="mb-3">
+      <button class="btn btn-primary" (click)="openAddUserModal()">Agregar Usuario</button>
+    </div>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Imagen</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of paginatedUsers">
+          <td>{{ user.id }}</td>
+          <td>
+            <img
+              *ngIf="user.image"
+              [src]="'http://127.0.0.1:8000/storage/' + user.image"
+              alt="{{ user.name }}"
+              class="rounded-circle"
+              style="width: 50px; height: 50px;"
+            />
+          </td>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <button class="btn btn-info btn-sm" (click)="viewUser(user)">Ver</button>
+            <button class="btn btn-warning btn-sm" (click)="editUser(user)">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="deleteUser(user)">Eliminar</button>
+          </td>
+        </tr>
+        <tr *ngIf="paginatedUsers.length === 0">
+          <td colspan="5" class="text-center">No se encontraron usuarios</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <nav>
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="currentPage === 1">
+          <a class="page-link" href="javascript:void(0)" (click)="previousPage()">Anterior</a>
+        </li>
+        <li
+          class="page-item"
+          *ngFor="let page of [].constructor(totalPages); let i = index"
+          [class.active]="currentPage === i + 1"
+        >
+          <a class="page-link" href="javascript:void(0)" (click)="goToPage(i + 1)">{{ i + 1 }}</a>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === totalPages">
+          <a class="page-link" href="javascript:void(0)" (click)="nextPage()">Siguiente</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Modal Ver Usuario -->
+  <div class="custom-modal" *ngIf="showViewModal">
+    <div class="custom-modal-content">
+      <h5>Ver Usuario</h5>
+      <img
+        *ngIf="selectedUser?.image"
+        [src]="'http://127.0.0.1:8000/storage/' + selectedUser.image"
+        alt="{{ selectedUser?.name }}"
+        class="img-fluid mb-3"
+        style="max-width: 150px;"
+      />
+      <p><strong>Nombre:</strong> {{ selectedUser?.name }}</p>
+      <p><strong>Email:</strong> {{ selectedUser?.email }}</p>
+      <button class="btn btn-secondary" (click)="closeModals()">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal Editar Usuario -->
+  <div class="custom-modal" *ngIf="showEditModal">
+    <div class="custom-modal-content">
+      <h5>Editar Usuario</h5>
+      <div class="mb-3">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="selectedUser.name" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label>Email</label>
+        <input type="email" [(ngModel)]="selectedUser.email" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label>Imagen</label>
+        <input id="editImage" type="file" class="form-control" (change)="onImageSelected($event, true)" />
+      </div>
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-primary" (click)="saveUser()">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Modal Eliminar Usuario -->
+  <div class="custom-modal" *ngIf="showDeleteModal">
+    <div class="custom-modal-content">
+      <h5>Eliminar Usuario</h5>
+      <p>¿Estás seguro de eliminar a <strong>{{ selectedUser?.name }}</strong>?</p>
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-danger" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Usuario -->
+  <div class="custom-modal" *ngIf="showAddModal">
+    <div class="custom-modal-content">
+      <h5>Agregar Usuario</h5>
+      <div class="mb-3">
+        <label for="userName">Nombre</label>
+        <input id="userName" type="text" class="form-control" [(ngModel)]="newUser.name" />
+      </div>
+      <div class="mb-3">
+        <label for="userEmail">Email</label>
+        <input id="userEmail" type="email" class="form-control" [(ngModel)]="newUser.email" />
+      </div>
+      <div class="mb-3">
+        <label for="userPassword">Contraseña</label>
+        <input id="userPassword" type="password" class="form-control" [(ngModel)]="newUser.password" />
+      </div>
+      <div class="mb-3">
+        <label for="userImage">Imagen</label>
+        <input id="userImage" type="file" class="form-control" (change)="onImageSelected($event)" />
+      </div>
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-primary" (click)="addUser()">Agregar</button>
+    </div>
+  </div>
+</div>
