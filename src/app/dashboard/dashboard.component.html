@@ -1,15 +1,35 @@
 <div class="container-fluid">
   <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
     <div class="container-fluid">
-      <a class="navbar-brand" href="javascript:void(0)">Gestión de Productos</a>
+      <a class="navbar-brand" href="javascript:void(0)">Dashboard</a>
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <a class="nav-link" href="javascript:void(0)" (click)="toggleDropdown()">
+          <a
+            class="nav-link"
+            href="javascript:void(0)"
+            (click)="toggleDropdown()"
+          >
             {{ loggedUser }}
           </a>
-          <ul class="dropdown-menu dropdown-menu-end" [class.show]="dropdownOpen">
+          <ul
+            class="dropdown-menu dropdown-menu-end"
+            [class.show]="dropdownOpen"
+          >
             <li>
-              <a class="dropdown-item" href="javascript:void(0)" (click)="logout()">Cerrar Sesión</a>
+              <a
+                class="dropdown-item"
+                href="javascript:void(0)"
+                (click)="logout()"
+              >
+                Cerrar Sesión
+              </a>
+              <a
+                class="dropdown-item"
+                routerLink="/usuarios"
+                routerLinkActive="active"
+              >
+                Usuarios
+              </a>
             </li>
           </ul>
         </li>
@@ -17,59 +37,153 @@
     </div>
   </nav>
 
-  <div class="container mt-4">
-    <h3>Gestión de Productos</h3>
-    <div class="mb-3">
-      <input
-        type="text"
-        class="form-control"
-        placeholder="Buscar productos"
-        [(ngModel)]="searchTerm"
-        (input)="filterProducts()"
-      />
+  <div class="card">
+    <div class="card-header">
+      <div class="d-flex justify-content-between align-items-center">
+       
+        <button class="btn btn-primary" (click)="openAddProductModal()">Agregar Producto</button>
+        <input
+          type="text"
+          class="form-control w-50"
+          placeholder="Buscar productos por nombre"
+          [(ngModel)]="searchTerm"
+          (input)="filterProducts()"
+        />
+      </div>
     </div>
+    <div class="card-body">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of paginatedProducts">
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.price | currency }}</td>
+            <td>{{ product.quantity }}</td>
+            <td>
+              <img
+                *ngIf="product.image"
+                [src]="product.image"
+                alt="{{ product.name }}"
+                style="width: 100px;"
+              />
+            </td>
+            
+            <td>
+              <button class="btn btn-info btn-sm" (click)="viewProduct(product)">Ver</button>
+              <button class="btn btn-warning btn-sm" (click)="editProduct(product)">Modificar</button>
+              <button class="btn btn-danger btn-sm" (click)="deleteProduct(product.id)">Eliminar</button>
+            </td>
+          </tr>
+          <tr *ngIf="paginatedProducts.length === 0">
+            <td colspan="6" class="text-center">No se encontraron productos</td>
+          </tr>
+        </tbody>
+      </table>
 
-    <button class="btn btn-primary mb-3" (click)="openAddProductModal()">Agregar Producto</button>
-
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Imagen</th>
-          <th>Nombre</th>
-          <th>Precio</th>
-          <th>Cantidad</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let product of paginatedProducts">
-          <td>{{ product.id }}</td>
-          <td>
-            <img *ngIf="product.image" [src]="'http://127.0.0.1:8000/storage/' + product.image" alt="{{ product.name }}" style="width: 50px;" />
-          </td>
-          <td>{{ product.name }}</td>
-          <td>{{ product.price | currency }}</td>
-          <td>{{ product.quantity }}</td>
-          <td>
-            <button class="btn btn-info btn-sm" (click)="viewProduct(product)">Ver</button>
-            <button class="btn btn-warning btn-sm" (click)="editProduct(product)">Editar</button>
-            <button class="btn btn-danger btn-sm" (click)="deleteProduct(product)">Eliminar</button>
-          </td>
-        </tr>
-        <tr *ngIf="paginatedProducts.length === 0">
-          <td colspan="6" class="text-center">No se encontraron productos</td>
-        </tr>
-      </tbody>
-    </table>
+      <nav>
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="currentPage === 1" (click)="previousPage()">
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let page of pages"
+            [class.active]="currentPage === page"
+            (click)="goToPage(page)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages" (click)="nextPage()">
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </div>
+</div>
 
-  <!-- Modal Add -->
-  <div class="custom-modal" *ngIf="showAddModal">
-    <div class="custom-modal-content">
-      <h5>Agregar Producto</h5>
-      <input type="text" placeholder="Nombre" [(ngModel)]="newProduct.name" />
-      <!-- Resto del modal -->
+
+<div class="custom-modal" *ngIf="showViewModal">
+  <div class="custom-modal-content">
+    <h5>Detalle del Producto</h5>
+    <img
+      *ngIf="selectedProduct?.image"
+      [src]="'http://127.0.0.1:8000/storage/' + selectedProduct.image"
+      alt="{{ selectedProduct?.name }}"
+      class="img-fluid"
+    />
+    <p><strong>Nombre:</strong> {{ selectedProduct?.name }}</p>
+    <p><strong>Descripción:</strong> {{ selectedProduct?.description }}</p>
+    <button class="btn btn-secondary" (click)="closeModals()">Cerrar</button>
+  </div>
+</div>
+
+
+<div class="custom-modal" *ngIf="showAddModal">
+  <div class="custom-modal-content">
+    <h5>Agregar Producto</h5>
+    <div class="mb-3">
+      <label>Nombre</label>
+      <input type="text" [(ngModel)]="newProduct.name" class="form-control" />
     </div>
+    <div class="mb-3">
+      <label>Precio</label>
+      <input type="number" [(ngModel)]="newProduct.price" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label>Cantidad</label>
+      <input type="number" [(ngModel)]="newProduct.quantity" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label>Imagen</label>
+      <input type="file" (change)="onImageSelected($event, true)" class="form-control" />
+    </div>
+    <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+    <button class="btn btn-primary" (click)="addProduct()">Guardar</button>
+  </div>
+</div>
+
+
+<div class="custom-modal" *ngIf="showEditModal">
+  <div class="custom-modal-content">
+    <h5>Editar Producto</h5>
+    <div class="mb-3">
+      <label>Nombre</label>
+      <input type="text" [(ngModel)]="selectedProduct.name" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label>Precio</label>
+      <input type="number" [(ngModel)]="selectedProduct.price" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label>Cantidad</label>
+      <input type="number" [(ngModel)]="selectedProduct.quantity" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label>Imagen</label>
+      <input type="file" (change)="onImageSelected($event, false)" class="form-control" />
+    </div>
+    <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+    <button class="btn btn-primary" (click)="saveProductEdits()">Guardar</button>
+  </div>
+</div>
+
+
+<div class="custom-modal" *ngIf="showDeleteModal">
+  <div class="custom-modal-content">
+    <h5>Eliminar Producto</h5>
+    <p>¿Estás seguro de eliminar el producto <strong>{{ selectedProduct?.name }}</strong>?</p>
+    <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+    <button class="btn btn-danger" (click)="confirmDelete()">Eliminar</button>
   </div>
 </div>
